@@ -3,12 +3,31 @@
 use Illuminate\Support\Facades\Route;
 use App\Services\Modules\ModuleRepository;
 use App\Http\Controllers\ModulesController;
-// use App\Livewire\AiChatbox;
 use App\Services\OllamaClient;
 use App\Services\RagService;
 
+// Welcome page
 Route::get('/', function () {
-    return view('welcome');
+    return view('welcome', [
+        'title' => 'Essencience',
+        'tagline' => 'Certificate-Based Authentication Platform'
+    ]);
+});
+
+// Certificate-authenticated dashboard
+Route::middleware('passport')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard', [
+            'user' => auth()->user()
+        ]);
+    })->name('dashboard');
+
+    Route::get('/profile', function () {
+        return view('profile', [
+            'user' => auth()->user(),
+            'certificates' => auth()->user()->certificates ?? collect()
+        ]);
+    })->name('profile');
 });
 
 // AI Chatbox Component (disabled - Livewire not installed)
