@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4aa01bae9b2954a53e860855f3f22623",
+    "content-hash": "6ed2f90f9e7e82f723a75d78f9e16ac7",
     "packages": [
         {
             "name": "brick/math",
@@ -543,6 +543,46 @@
                 }
             ],
             "description": "Certificate Authority management for Laravel using macOS Keychain",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "essencience/passport",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "./packages/essencience/passport",
+                "reference": "80e7dc3488cae904fb352567fa5ffdf3588126ae"
+            },
+            "require": {
+                "essencience/certificate-authority": "@dev",
+                "illuminate/support": "^11.0|^12.0",
+                "php": "^8.2"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Essencience\\Passport\\PassportServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Essencience\\Passport\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Essencience",
+                    "email": "dev@essencience.com"
+                }
+            ],
+            "description": "Certificate-based authentication passport system for Laravel",
             "transport-options": {
                 "relative": true
             }
@@ -8402,7 +8442,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "essencience/certificate-authority": 20
+        "essencience/certificate-authority": 20,
+        "essencience/passport": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
