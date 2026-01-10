@@ -5,11 +5,23 @@
     "description": "The skeleton application for the Laravel framework.",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/essencience/certificate-authority"
+        },
+        {
+            "type": "path",
+            "url": "./packages/essencience/passport"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "guzzlehttp/guzzle": "^7.9|^8.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "essencience/certificate-authority": "@dev",
+        "essencience/passport": "@dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
