@@ -201,7 +201,7 @@ class CertificateService
     protected function extractValidity(string $text): array
     {
         $notBefore = $this->extractField($text, 'Not Before:');
-        $notAfter = $this->extractField($text, 'Not After :');
+        $notAfter = $this->extractField($text, 'Not After:');
 
         return [
             'not_before' => $notBefore,
