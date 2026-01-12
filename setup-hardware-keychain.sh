@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Hardware Key Protected Keychain Setup for Essencience
-# Creates a dedicated Keychain protected by YubiKey/security key
-# Requires: macOS + YubiKey 5 Series or compatible security key
+# Creates a dedicated Keychain protected by YubiKey/Titan/security key
+# Requires: macOS + YubiKey 5 Series, Titan Security Key, or compatible FIDO2 key
 
 set -e
 
@@ -50,16 +50,18 @@ fi
 print_header "Hardware Key Protected Keychain Setup"
 
 # Step 1: Check for hardware key
-print_step "Checking for YubiKey or security key..."
+print_step "Checking for hardware key utilities (YubiKey Manager or Titan)..."
 if ! command -v ykman &> /dev/null; then
-    print_warning "YubiKey Manager not found"
+    print_warning "YubiKey Manager not found (optional)"
     echo ""
     echo "To use YubiKey security features, install:"
     echo "  brew install yubico/tap/yubikey-manager"
     echo ""
-    echo "Or download from: https://www.yubico.com/products/yubico-manager/"
+    echo "For Titan Security Keys, no additional software needed:"
+    echo "  - OpenSSH 8.2+ (usually pre-installed)"
+    echo "  - Titan key inserted or paired (Bluetooth)"
     echo ""
-    read -p "Continue without YubiKey verification? (y/n) " -n 1 -r
+    read -p "Continue? (y/n) " -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Installation cancelled."
@@ -174,22 +176,25 @@ echo "🔐 Security Features:"
 echo "  ✓ Requires master password to unlock"
 echo "  ✓ Locks after 5 minutes of inactivity"
 echo "  ✓ Locks when Mac sleeps"
-echo "  ✓ Can be linked to YubiKey for 2FA"
+echo "  ✓ Can be linked to YubiKey or Titan key for 2FA"
 echo "  ✓ Credentials encrypted at rest"
 echo ""
 echo "📋 Next Steps:"
 echo ""
-echo "1. For YubiKey SSH Certificates (recommended):"
+echo "1. For YubiKey SSH Certificates:"
 echo "   bash setup-hardware-ssh-certs.sh"
 echo ""
-echo "2. To unlock and view credentials:"
+echo "2. For Titan Security Key SSH (recommended):"
+echo "   bash setup-titan-ssh-certs.sh"
+echo ""
+echo "3. To unlock and view credentials:"
 echo "   security list-generic-passwords -k $KEYCHAIN_NAME"
 echo ""
-echo "3. To use in deployment scripts:"
+echo "4. To use in deployment scripts:"
 echo "   • Scripts will automatically unlock when needed"
 echo "   • You'll be prompted for Keychain password"
-echo "   • With YubiKey: You'll also need to touch the key"
+echo "   • With hardware key: You'll also need to touch the key"
 echo ""
-echo "4. Manage in Keychain Access:"
+echo "5. Manage in Keychain Access:"
 echo "   open -a 'Keychain Access'"
 echo ""

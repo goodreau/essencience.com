@@ -4,9 +4,9 @@
 
 This guide sets up **enterprise-grade security** for essencience.com using:
 
-- **YubiKey 5 Series** (or compatible security key) for hardware-protected authentication
+- **Hardware Security Keys** (YubiKey 5 Series or Titan Security Keys)
 - **Separate secure Keychain** that requires password + hardware key
-- **SSH certificate authentication** with mandatory hardware key touch
+- **SSH certificate/key authentication** with mandatory hardware key touch
 - **Zero plaintext credentials** stored on Mac (all encrypted or on hardware)
 
 ---
@@ -19,41 +19,61 @@ This guide sets up **enterprise-grade security** for essencience.com using:
 | ❌ Hacked if Mac is compromised | ✅ Safe even if Mac is compromised |
 | ❌ No audit trail of access | ✅ Every operation logged on hardware |
 | ❌ Can be stolen/copied | ✅ Unique to physical device, non-cloneable |
+| ❌ Vulnerable to malware | ✅ Malware cannot access hardware keys |
 
 ---
 
 ## Hardware Requirements
 
-**Recommended:**
-- **YubiKey 5 Series** (full feature set)
-  - YubiKey 5
-  - YubiKey 5 Nano
-  - YubiKey 5C (USB-C)
-  - YubiKey 5Ci (Lightning + USB-C)
+**Option 1: Titan Security Keys (Recommended)**
+- Google Titan Security Key (USB-A or BLE/USB-C)
+- Works with FIDO2/U2F standard
+- **No additional software needed** (uses standard OpenSSH)
+- **Price:** $30-50 USD
+
+**Option 2: YubiKey 5 Series**
+- YubiKey 5 (USB-A)
+- YubiKey 5 Nano (compact USB-A)
+- YubiKey 5C (USB-C)
+- YubiKey 5Ci (Lightning + USB-C)
+- Requires YubiKey Manager software
+- **Price:** $45-80 USD
 
 **Also Supported:**
-- YubiKey 4 Series (limited features)
-- Titan Security Keys
+- YubiKey 4 Series (legacy features)
 - OnlyKey
 - Somu
-
-**Price:** $45-80 USD
+- Any FIDO2-certified security key
 
 ---
 
 ## Setup Steps
 
-### Step 1: Install Prerequisites
+### Step 1: Choose Your Security Key
 
+**For Titan Security Key (simplest):**
+- No software installation needed
+- Works with OpenSSH 8.2+ (pre-installed on macOS)
+- FIDO2 certified by Google
+- Lower cost, simpler setup
+
+**For YubiKey 5 Series (more features):**
+- Advanced PIV certificate support
+- YubiKey Manager required
+- More customization options
+- Better for complex deployments
+
+### Step 2: Install Prerequisites
+
+**For YubiKey users:**
 ```bash
-# Install YubiKey Manager
 brew install yubico/tap/yubikey-manager
-
-# Verify installation
 ykman version
 ```
 
-### Step 2: Create Hardware-Protected Keychain
+**For Titan users:** No additional installation needed! (OpenSSH 8.2+ built-in)
+
+### Step 3: Create Hardware-Protected Keychain
 
 ```bash
 bash setup-hardware-keychain.sh
@@ -69,8 +89,25 @@ bash setup-hardware-keychain.sh
 - Master password for Keychain (use something strong!)
 - Hostinger SSH password
 
-### Step 3: Configure YubiKey for SSH
+### Step 4: Configure Your Hardware Security Key
 
+**For Titan Security Key (recommended):**
+```bash
+bash setup-titan-ssh-certs.sh
+```
+
+**What happens:**
+1. Generates FIDO2 SSH key using your Titan key
+2. Private key stored **only on the hardware**
+3. Exports public key for server
+4. Creates SSH configuration automatically
+5. Stores Titan info in Keychain
+
+**Prompts:**
+- Touch your Titan key when prompted
+- Choose key naming options
+
+**For YubiKey 5:**
 ```bash
 bash setup-hardware-ssh-certs.sh
 ```
@@ -86,16 +123,24 @@ bash setup-hardware-ssh-certs.sh
 - Optional: Custom management key
 - Touch the YubiKey when requested
 
-### Step 4: Add Public Key to Hostinger
+### Step 5: Add Public Key to Hostinger
 
-Get your public key:
+**Get your public key:**
+
+For Titan:
+```bash
+cat ~/.ssh/essencience/essencience-titan.pub
+```
+
+For YubiKey:
 ```bash
 cat ~/.ssh/essencience/essencience-yubikey.pub
 ```
 
-Add to Hostinger:
+**Add to Hostinger:**
+
+Option A - Via SSH (last time without hardware key):
 ```bash
-# Via SSH (last time without YubiKey)
 ssh -p 65002 u693982071@147.93.42.19 << 'SSHCMD'
 cat >> ~/.ssh/authorized_keys << 'PUBKEY'
 [PASTE PUBLIC KEY HERE]
@@ -103,10 +148,13 @@ PUBKEY
 SSHCMD
 ```
 
-Or via Hostinger File Manager:
+Option B - Via Hostinger File Manager:
 1. Go to File Manager
 2. Navigate to `.ssh/authorized_keys`
 3. Edit and add your public key (new line)
+4. Save
+
+
 
 ### Step 5: Test YubiKey SSH Access
 

@@ -53,15 +53,27 @@ fi
 # Detect authentication method
 print_header "Detecting Authentication Method"
 
-# Check for hardware key (YubiKey) first
-YUBIKEY_SERIAL=$(security find-generic-password -s "$SERVICE_HARDWARE" -a "$ACCOUNT" -w 2>/dev/null || echo "")
-if [ -n "$YUBIKEY_SERIAL" ] && [ -f "$YUBIKEY_PATH/essencience-yubikey.pub" ]; then
-    print_success "YubiKey detected (Serial: $YUBIKEY_SERIAL)"
-    print_success "Using YubiKey SSH certificate authentication"
-    AUTH_METHOD="hardware"
-    SSH_KEY="$YUBIKEY_PATH/essencience-yubikey"
+# Check for Titan Security Key first
+TITAN_KEY="$YUBIKEY_PATH/essencience-titan"
+if [ -f "$TITAN_KEY" ]; then
+    print_success "Titan Security Key detected"
+    print_success "Using Titan SSH key authentication (FIDO2)"
+    AUTH_METHOD="titan"
+    SSH_KEY="$TITAN_KEY"
+# Check for YubiKey
+elif [ -f "$YUBIKEY_PATH/essencience-yubikey" ]; then
+    YUBIKEY_SERIAL=$(security find-generic-password -s "$SERVICE_HARDWARE" -a "$ACCOUNT" -w 2>/dev/null || echo "")
+    if [ -n "$YUBIKEY_SERIAL" ]; then
+        print_success "YubiKey detected (Serial: $YUBIKEY_SERIAL)"
+        print_success "Using YubiKey SSH certificate authentication"
+        AUTH_METHOD="yubikey"
+        SSH_KEY="$YUBIKEY_PATH/essencience-yubikey"
+    else
+        print_step "YubiKey key found but not configured in Keychain"
+        AUTH_METHOD="password"
+    fi
 else
-    print_step "YubiKey not configured, using password authentication"
+    print_step "No hardware key detected, using password authentication"
     AUTH_METHOD="password"
 fi
 
@@ -75,7 +87,8 @@ if [ "$AUTH_METHOD" = "password" ]; then
         print_error "Credentials not found in Keychain"
         echo ""
         echo "For password authentication: bash setup-keychain.sh"
-        echo "For hardware key (YubiKey):  bash setup-hardware-keychain.sh"
+        echo "For Titan Security Key:      bash setup-titan-ssh-certs.sh"
+        echo "For YubiKey:                 bash setup-hardware-ssh-certs.sh"
         exit 1
     fi
     print_success "Password retrieved from Keychain"
@@ -86,13 +99,14 @@ SSH_HOST=$(security find-generic-password -s "${SERVICE}-HOST" -a "$ACCOUNT" -w 
 SSH_PORT=$(security find-generic-password -s "${SERVICE}-PORT" -a "$ACCOUNT" -w 2>/dev/null || echo "$DEFAULT_PORT")
 
 # Build SSH command based on authentication method
-if [ "$AUTH_METHOD" = "hardware" ]; then
+if [ "$AUTH_METHOD" = "titan" ]; then
     SSH_CMD="ssh -p $SSH_PORT -i $SSH_KEY -o ConnectTimeout=10 -o 'StrictHostKeyChecking=no' $ACCOUNT@$SSH_HOST"
-    SSH_OPTIONS=""
+    echo "Authentication: Titan Security Key (FIDO2)"
+elif [ "$AUTH_METHOD" = "yubikey" ]; then
+    SSH_CMD="ssh -p $SSH_PORT -i $SSH_KEY -o ConnectTimeout=10 -o 'StrictHostKeyChecking=no' $ACCOUNT@$SSH_HOST"
     echo "Authentication: YubiKey SSH Key"
 else
     SSH_CMD="ssh -p $SSH_PORT -o ConnectTimeout=10 -o 'PreferredAuthentications=password' -o 'StrictHostKeyChecking=no' $ACCOUNT@$SSH_HOST"
-    SSH_OPTIONS=""
     echo "Authentication: Password (from Keychain)"
 fi
 
@@ -123,7 +137,10 @@ SSHCMD
 # Step 1: Backup existing files
 print_step "Backing up existing installation..."
 if [ "$AUTH_METHOD" = "hardware" ]; then
-    eval "$SSH_CMD" << SSHCMD 2>/dev/null || true
+# Step 1: Backup existing files
+print_step "Backing up existing installation..."
+if [ "$AUTH_METHOD" = "password" ]; then
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD 2>/dev/null || true
 if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
     BACKUP_PATH="${DEPLOY_PATH}_backup_\$(date +%s)"
     mv "$DEPLOY_PATH" "\$BACKUP_PATH"
@@ -131,7 +148,8 @@ if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
 fi
 SSHCMD
 else
-    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD 2>/dev/null || true
+    # Hardware key (Titan or YubiKey)
+    eval "$SSH_CMD" << SSHCMD 2>/dev/null || true
 if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
     BACKUP_PATH="${DEPLOY_PATH}_backup_\$(date +%s)"
     mv "$DEPLOY_PATH" "\$BACKUP_PATH"
@@ -143,7 +161,14 @@ print_success "Backup completed (if previous install existed)"
 
 # Step 2: Clone or update repository
 print_step "Cloning repository..."
-if [ "$AUTH_METHOD" = "hardware" ]; then
+if [ "$AUTH_METHOD" = "password" ]; then
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+git clone --depth=1 "$REPO" "$DEPLOY_PATH" || true
+cd "$DEPLOY_PATH"
+git fetch origin main
+git reset --hard origin/main
+SSHCMD
+else
     eval "$SSH_CMD" << SSHCMD
 git clone --depth=1 "$REPO" "$DEPLOY_PATH" || true
 cd "$DEPLOY_PATH"
