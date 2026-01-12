@@ -75,6 +75,5 @@
 
         {{ $slot }}
 
-        @fluxScripts(['nonce' => $cspNonce ?? null])
     </body>
 </html>
