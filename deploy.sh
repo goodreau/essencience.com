@@ -11,6 +11,16 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Step 0: Setup SSH key authentication
+echo -e "${BLUE}🔑 Setting up SSH key authentication...${NC}"
+mkdir -p ~/.ssh
+cat >> ~/.ssh/authorized_keys << 'SSHKEY'
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBfPv4qPSy/k7MaSw+Omlvn/Zu8KNfqgmA3NxrCV2A/T essencience.com
+SSHKEY
+chmod 600 ~/.ssh/authorized_keys
+chmod 700 ~/.ssh
+echo -e "${GREEN}✅ SSH key configured${NC}"
+
 # Step 1: Backup existing files if they exist
 if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
     echo -e "${BLUE}📦 Backing up existing installation...${NC}"
