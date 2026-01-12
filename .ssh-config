@@ -1,0 +1,6 @@
+Host essencience
+    HostName 147.93.42.19
+    Port 65002
+    User u693982071
+    ServerAliveInterval 60
+    ServerAliveCountMax 3

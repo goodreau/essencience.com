@@ -1,0 +1,17 @@
+{
+  "name": "acme/hello",
+  "description": "Example hello module",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "Acme\\Hello\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Acme\\Hello\\HelloServiceProvider"
+      ]
+    }
+  }
+}

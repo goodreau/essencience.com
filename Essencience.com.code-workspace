@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Essencia-QUES"
+		}
+	],
+	"settings": {
+		"notebook.defaultFormatter": "GitHub.copilot-chat",
+		"localaipilot.general.inlineSuggestions": true,
+		"localaipilot.general.mode": "container"
+	}
+}

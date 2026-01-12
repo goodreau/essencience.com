@@ -1,0 +1,47 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, json, bcmath
+    
+    - name: Install Composer dependencies
+      working-directory: ./laravel-temp
+      run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+    
+    - name: Deploy to Hostinger via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOSTINGER_HOST }}
+        username: ${{ secrets.HOSTINGER_USERNAME }}
+        password: ${{ secrets.HOSTINGER_PASSWORD }}
+        port: ${{ secrets.HOSTINGER_PORT }}
+        script: |
+          cd ~/domains/essencience.com/laravel-app
+          git pull origin main
+          cd laravel-temp
+          composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+          php artisan key:generate --force --no-interaction || true
+          php artisan migrate --force --no-interaction
+          php artisan storage:link --no-interaction || true
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan optimize
+          php artisan ca:generate || true
+          chmod -R 775 storage bootstrap/cache
+          echo "Deployment completed successfully!"
