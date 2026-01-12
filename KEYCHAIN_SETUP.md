@@ -255,3 +255,45 @@ For issues:
 ---
 
 **Your deployment is now secure! 🔐**
+
+---
+
+## Server-Side Keychain (Hostinger)
+
+On Hostinger, we install a lightweight, file-based keychain to store secrets securely on the server (encrypted with OpenSSL).
+
+- Location: `~/.essencience/keychain`
+- Script: `~/.essencience/keychain/server-keychain.sh`
+
+### Commands
+```bash
+# Initialize (creates master key and directories)
+~/.essencience/keychain/server-keychain.sh init
+
+# Store a secret (service/key/value)
+~/.essencience/keychain/server-keychain.sh set app DB_PASSWORD 'super-secret-pass'
+~/.essencience/keychain/server-keychain.sh set app MAIL_PASSWORD 'smtp-app-pass'
+
+# Retrieve a secret
+~/.essencience/keychain/server-keychain.sh get app DB_PASSWORD
+
+# List keys for a service
+~/.essencience/keychain/server-keychain.sh list app
+
+# Delete a secret
+~/.essencience/keychain/server-keychain.sh delete app DB_PASSWORD
+```
+
+### How deploy.sh uses it
+- During deployment, the script installs and initializes the server keychain.
+- If `DB_PASSWORD` or `MAIL_PASSWORD` exist in the server keychain, they are applied to the app’s `.env` automatically.
+
+### Notes
+- Secrets are encrypted at rest using AES-256-CBC with `-pbkdf2`.
+- The master key is stored at `~/.essencience/keychain/master.key` with `chmod 600`.
+- For higher assurance, combine with SSH hardware keys (Titan/YubiKey) and disable password auth server-side.
+
+### Quick check from local
+```bash
+ssh -p 65002 u693982071@147.93.42.19 '~/.essencience/keychain/server-keychain.sh list app || ~/.essencience/keychain/server-keychain.sh init'
+```
