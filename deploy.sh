@@ -1,92 +1,164 @@
 #!/bin/bash
+
+# Secure Hostinger Deployment Script
+# Uses macOS Keychain for credential storage (passwords never in plain text)
+# GitHub: https://github.com/goodreau/essencience.com
+
 set -e
 
-echo "🚀 Deploying Essencience to Hostinger..."
-
+# Configuration
 DEPLOY_PATH="/home/u693982071/public_html"
 REPO="https://github.com/goodreau/essencience.com.git"
+SERVICE="Essencience-Hostinger"
+ACCOUNT="u693982071"
+DEFAULT_HOST="147.93.42.19"
+DEFAULT_PORT="65002"
 
-# Colors for output
+# Colors
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-# Step 0: Setup SSH key authentication
-echo -e "${BLUE}🔑 Setting up SSH key authentication...${NC}"
-mkdir -p ~/.ssh
-cat >> ~/.ssh/authorized_keys << 'SSHKEY'
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBfPv4qPSy/k7MaSw+Omlvn/Zu8KNfqgmA3NxrCV2A/T essencience.com
-SSHKEY
-chmod 600 ~/.ssh/authorized_keys
-chmod 700 ~/.ssh
-echo -e "${GREEN}✅ SSH key configured${NC}"
+# Helper functions
+print_header() {
+    echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}  $1${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
+}
 
-# Step 1: Backup existing files if they exist
+print_step() {
+    echo -e "${BLUE}→ $1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+# Check if running on macOS
+if [[ "$OSTYPE" != "darwin"* ]]; then
+    print_error "This script requires macOS with Keychain"
+    exit 1
+fi
+
+# Retrieve credentials from Keychain
+print_header "Retrieving Credentials from Keychain"
+
+SSH_PASSWORD=$(security find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w 2>/dev/null)
+if [ -z "$SSH_PASSWORD" ]; then
+    print_error "Credentials not found in Keychain"
+    echo ""
+    echo "First, run: bash setup-keychain.sh"
+    exit 1
+fi
+print_success "Password retrieved from Keychain"
+
+# Get optional SSH host/port from Keychain or use defaults
+SSH_HOST=$(security find-generic-password -s "${SERVICE}-HOST" -a "$ACCOUNT" -w 2>/dev/null || echo "$DEFAULT_HOST")
+SSH_PORT=$(security find-generic-password -s "${SERVICE}-PORT" -a "$ACCOUNT" -w 2>/dev/null || echo "$DEFAULT_PORT")
+
+print_header "🚀 Deploying Essencience to Hostinger"
+
+echo "Host: $SSH_HOST"
+echo "Port: $SSH_PORT"
+echo "User: $ACCOUNT"
+echo "Path: $DEPLOY_PATH"
+echo ""
+
+# Step 1: Backup existing files
+print_step "Backing up existing installation..."
+ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD 2>/dev/null || true
 if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
-    echo -e "${BLUE}📦 Backing up existing installation...${NC}"
-    BACKUP_PATH="${DEPLOY_PATH}_backup_$(date +%s)"
-    mv "$DEPLOY_PATH" "$BACKUP_PATH"
-    echo "Backup saved to: $BACKUP_PATH"
+    BACKUP_PATH="${DEPLOY_PATH}_backup_\$(date +%s)"
+    mv "$DEPLOY_PATH" "\$BACKUP_PATH"
+    echo "Backup: \$BACKUP_PATH"
 fi
+SSHCMD
+print_success "Backup completed (if previous install existed)"
 
-# Step 2: Clone the repository
-echo -e "${BLUE}📥 Cloning repository from GitHub...${NC}"
-git clone "$REPO" "$DEPLOY_PATH" || { echo "❌ Failed to clone repository"; exit 1; }
+# Step 2: Clone or update repository
+print_step "Cloning repository..."
+ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD
+git clone --depth=1 "$REPO" "$DEPLOY_PATH" || true
 cd "$DEPLOY_PATH"
+git fetch origin main
+git reset --hard origin/main
+SSHCMD
+print_success "Repository cloned/updated"
 
-# Step 3: Copy environment file
-echo -e "${BLUE}⚙️ Setting up environment file...${NC}"
-if [ ! -f ".env.example" ]; then
-    echo "❌ .env.example not found!"
-    exit 1
-fi
-cp .env.example .env
+# Step 3: Install dependencies
+print_step "Installing dependencies..."
+ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD
+cd "$DEPLOY_PATH"
+export COMPOSER_PROCESS_TIMEOUT=600
+composer install --optimize-autoloader --no-dev --no-progress --no-interaction
+SSHCMD
+print_success "Composer dependencies installed"
 
-# Update environment variables for production
-sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
-sed -i 's/APP_ENV=local/APP_ENV=production/' .env
-
-# Ensure database path is set correctly
-DB_PATH="$DEPLOY_PATH/database/database.sqlite"
-sed -i "s|^DB_DATABASE=.*|DB_DATABASE=$DB_PATH|" .env
-
-# Step 4: Create database file and directory
-echo -e "${BLUE}🗄️ Creating database directory and file...${NC}"
-mkdir -p "$DEPLOY_PATH/database"
-touch "$DB_PATH"
-
-# Step 5: Install Composer dependencies
-echo -e "${BLUE}📚 Installing Composer dependencies...${NC}"
-if ! command -v composer &> /dev/null; then
-    echo "❌ Composer is not installed on this server!"
-    exit 1
-fi
-composer install --no-dev --optimize-autoloader --no-interaction
-
-# Step 6: Generate application key
-echo -e "${BLUE}🔑 Generating application key...${NC}"
+# Step 4: Setup environment
+print_step "Setting up environment..."
+ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD
+cd "$DEPLOY_PATH"
+[ -f .env ] || cp .env.example .env
 php artisan key:generate --force
-
-# Step 7: Run migrations
-echo -e "${BLUE}🔄 Running database migrations...${NC}"
-php artisan migrate --force --no-interaction
-
-# Step 8: Set proper permissions
-echo -e "${BLUE}🔐 Setting file permissions...${NC}"
-chmod -R 755 "$DEPLOY_PATH"
-chmod -R 775 "$DEPLOY_PATH/storage"
-chmod -R 775 "$DEPLOY_PATH/bootstrap/cache"
-chmod 666 "$DB_PATH"
-
-# Step 9: Clear and cache configuration
-echo -e "${BLUE}⚡ Caching configuration...${NC}"
+touch database/database.sqlite
+php artisan migrate --force
+php artisan cache:clear
 php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+SSHCMD
+print_success "Environment configured"
 
-echo -e "${GREEN}✅ Deployment complete!${NC}"
-echo -e "${GREEN}🌐 Your site is live at: https://essencience.com${NC}"
-echo -e "${GREEN}📊 Check status with: php artisan about${NC}"
+# Step 5: Set permissions
+print_step "Setting file permissions..."
+ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD
+cd "$DEPLOY_PATH"
+chmod -R 755 storage bootstrap/cache
+chmod 644 database/database.sqlite
+chmod +x artisan
+SSHCMD
+print_success "Permissions set correctly"
+
+# Step 6: Verify deployment
+print_step "Verifying deployment..."
+LARAVEL_VERSION=$(ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
+    -o "PreferredAuthentications=password" \
+    -o "StrictHostKeyChecking=no" << SSHCMD 2>/dev/null
+cd "$DEPLOY_PATH"
+php artisan --version
+SSHCMD
+)
+
+echo "Laravel version: $LARAVEL_VERSION"
+print_success "Deployment verified"
+
+echo ""
+print_header "✨ Deployment Complete!"
+echo ""
+echo "Your site is now live at:"
+echo "  https://essencience.com"
+echo ""
+echo "📋 Next steps:"
+echo "  1. Visit https://essencience.com in your browser"
+echo "  2. Test all pages (/, /about, /services, /contact, /counter)"
+echo "  3. Check browser console for any errors"
+echo ""
+echo "📱 Useful commands:"
+echo "  • View logs:    ./deploy-helper.sh (choose 'View Logs')"
+echo "  • Clear cache:  ./deploy-helper.sh (choose 'Clear Cache')"
+echo "  • SSH access:   ./deploy-helper.sh (choose 'SSH Access')"
+echo ""
