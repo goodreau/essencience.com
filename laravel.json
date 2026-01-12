@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "laravel-boost": {
+      "command": "/usr/local/bin/laravel-boost",
+      "args": [],
+      "env": {},
+      "enabled": true
+    }
+  }
+}
