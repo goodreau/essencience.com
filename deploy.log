@@ -1,0 +1,16 @@
+[0;34m═══════════════════════════════════════════════[0m
+[0;34m  Detecting Authentication Method[0m
+[0;34m═══════════════════════════════════════════════[0m
+[0;32m✅ SSH key detected: /Users/essencia/.ssh/essencience/essencience-deploy[0m
+[0;32m✅ Using standard SSH key authentication[0m
+
+Authentication: SSH Key (ed25519)
+[0;34m═══════════════════════════════════════════════[0m
+[0;34m  🚀 Deploying Essencience to Hostinger[0m
+[0;34m═══════════════════════════════════════════════[0m
+Host: 147.93.42.19
+Port: 65002
+User: u693982071
+Path: /home/u693982071/public_html
+
+[0;34m→ Backing up existing installation (Laravel/WordPress detection)...[0m
