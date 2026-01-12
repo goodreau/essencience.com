@@ -20,18 +20,30 @@ class ContentSecurityPolicy
         $response = $next($request);
 
         $csp = implode('; ', [
-            // Default
+            // Baseline policy
             "default-src 'self'",
-            // Scripts: self, Tailwind CDN, and nonce for inline scripts used by Flux/Tailwind config
+
+            // Scripts: self + Tailwind CDN + nonce for Flux and config inline scripts
             "script-src 'self' https://cdn.tailwindcss.com 'nonce-{$nonce}'",
-            // Styles: self, Bunny fonts CSS, and nonce for inline <style> injected by Flux
-            "style-src 'self' https://fonts.bunny.net 'nonce-{$nonce}'",
-            // Fonts: self + Bunny fonts + data URIs
+
+            // Styles: allow Bunny fonts CSS and inline styles (Tailwind CDN injects <style> tags without nonce)
+            "style-src 'self' https://fonts.bunny.net 'nonce-{$nonce}' 'unsafe-inline'",
+
+            // Fonts: Bunny + data URIs
             "font-src 'self' https://fonts.bunny.net data:",
+
             // Images: self + data URIs
             "img-src 'self' data:",
-            // Connections for Livewire/AJAX
+
+            // AJAX / Livewire requests
             "connect-src 'self'",
+
+            // Disallow legacy embeddables
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "upgrade-insecure-requests",
         ]);
 
         $response->headers->set('Content-Security-Policy', $csp, false);
