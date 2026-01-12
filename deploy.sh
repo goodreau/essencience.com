@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Secure Hostinger Deployment Script
-# Uses macOS Keychain for credential storage (passwords never in plain text)
+# Supports:
+#   1. Standard Keychain + password authentication
+#   2. Hardware key (YubiKey) + SSH certificate authentication
 # GitHub: https://github.com/goodreau/essencience.com
 
 set -e
@@ -10,9 +12,11 @@ set -e
 DEPLOY_PATH="/home/u693982071/public_html"
 REPO="https://github.com/goodreau/essencience.com.git"
 SERVICE="Essencience-Hostinger"
+SERVICE_HARDWARE="Essencience-SSH-Cert"
 ACCOUNT="u693982071"
 DEFAULT_HOST="147.93.42.19"
 DEFAULT_PORT="65002"
+YUBIKEY_PATH="$HOME/.ssh/essencience"
 
 # Colors
 RED='\033[0;31m'
@@ -46,21 +50,51 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
     exit 1
 fi
 
-# Retrieve credentials from Keychain
-print_header "Retrieving Credentials from Keychain"
+# Detect authentication method
+print_header "Detecting Authentication Method"
 
-SSH_PASSWORD=$(security find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w 2>/dev/null)
-if [ -z "$SSH_PASSWORD" ]; then
-    print_error "Credentials not found in Keychain"
-    echo ""
-    echo "First, run: bash setup-keychain.sh"
-    exit 1
+# Check for hardware key (YubiKey) first
+YUBIKEY_SERIAL=$(security find-generic-password -s "$SERVICE_HARDWARE" -a "$ACCOUNT" -w 2>/dev/null || echo "")
+if [ -n "$YUBIKEY_SERIAL" ] && [ -f "$YUBIKEY_PATH/essencience-yubikey.pub" ]; then
+    print_success "YubiKey detected (Serial: $YUBIKEY_SERIAL)"
+    print_success "Using YubiKey SSH certificate authentication"
+    AUTH_METHOD="hardware"
+    SSH_KEY="$YUBIKEY_PATH/essencience-yubikey"
+else
+    print_step "YubiKey not configured, using password authentication"
+    AUTH_METHOD="password"
 fi
-print_success "Password retrieved from Keychain"
+
+echo ""
+
+# Retrieve credentials
+if [ "$AUTH_METHOD" = "password" ]; then
+    print_step "Retrieving password from Keychain..."
+    SSH_PASSWORD=$(security find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w 2>/dev/null)
+    if [ -z "$SSH_PASSWORD" ]; then
+        print_error "Credentials not found in Keychain"
+        echo ""
+        echo "For password authentication: bash setup-keychain.sh"
+        echo "For hardware key (YubiKey):  bash setup-hardware-keychain.sh"
+        exit 1
+    fi
+    print_success "Password retrieved from Keychain"
+fi
 
 # Get optional SSH host/port from Keychain or use defaults
 SSH_HOST=$(security find-generic-password -s "${SERVICE}-HOST" -a "$ACCOUNT" -w 2>/dev/null || echo "$DEFAULT_HOST")
 SSH_PORT=$(security find-generic-password -s "${SERVICE}-PORT" -a "$ACCOUNT" -w 2>/dev/null || echo "$DEFAULT_PORT")
+
+# Build SSH command based on authentication method
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    SSH_CMD="ssh -p $SSH_PORT -i $SSH_KEY -o ConnectTimeout=10 -o 'StrictHostKeyChecking=no' $ACCOUNT@$SSH_HOST"
+    SSH_OPTIONS=""
+    echo "Authentication: YubiKey SSH Key"
+else
+    SSH_CMD="ssh -p $SSH_PORT -o ConnectTimeout=10 -o 'PreferredAuthentications=password' -o 'StrictHostKeyChecking=no' $ACCOUNT@$SSH_HOST"
+    SSH_OPTIONS=""
+    echo "Authentication: Password (from Keychain)"
+fi
 
 print_header "🚀 Deploying Essencience to Hostinger"
 
@@ -70,47 +104,83 @@ echo "User: $ACCOUNT"
 echo "Path: $DEPLOY_PATH"
 echo ""
 
+# SSH function that handles both auth methods
+run_ssh() {
+    local cmd="$1"
+    if [ "$AUTH_METHOD" = "hardware" ]; then
+        # For hardware key, use the key directly
+        eval "$SSH_CMD" << SSHCMD
+$cmd
+SSHCMD
+    else
+        # For password, use sshpass
+        echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+$cmd
+SSHCMD
+    fi
+}
+
 # Step 1: Backup existing files
 print_step "Backing up existing installation..."
-ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD 2>/dev/null || true
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    eval "$SSH_CMD" << SSHCMD 2>/dev/null || true
 if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
     BACKUP_PATH="${DEPLOY_PATH}_backup_\$(date +%s)"
     mv "$DEPLOY_PATH" "\$BACKUP_PATH"
     echo "Backup: \$BACKUP_PATH"
 fi
 SSHCMD
+else
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD 2>/dev/null || true
+if [ -d "$DEPLOY_PATH" ] && [ -f "$DEPLOY_PATH/artisan" ]; then
+    BACKUP_PATH="${DEPLOY_PATH}_backup_\$(date +%s)"
+    mv "$DEPLOY_PATH" "\$BACKUP_PATH"
+    echo "Backup: \$BACKUP_PATH"
+fi
+SSHCMD
+fi
 print_success "Backup completed (if previous install existed)"
 
 # Step 2: Clone or update repository
 print_step "Cloning repository..."
-ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    eval "$SSH_CMD" << SSHCMD
 git clone --depth=1 "$REPO" "$DEPLOY_PATH" || true
 cd "$DEPLOY_PATH"
 git fetch origin main
 git reset --hard origin/main
 SSHCMD
+else
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+git clone --depth=1 "$REPO" "$DEPLOY_PATH" || true
+cd "$DEPLOY_PATH"
+git fetch origin main
+git reset --hard origin/main
+SSHCMD
+fi
 print_success "Repository cloned/updated"
 
 # Step 3: Install dependencies
 print_step "Installing dependencies..."
-ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    eval "$SSH_CMD" << SSHCMD
 cd "$DEPLOY_PATH"
 export COMPOSER_PROCESS_TIMEOUT=600
 composer install --optimize-autoloader --no-dev --no-progress --no-interaction
 SSHCMD
+else
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+cd "$DEPLOY_PATH"
+export COMPOSER_PROCESS_TIMEOUT=600
+composer install --optimize-autoloader --no-dev --no-progress --no-interaction
+SSHCMD
+fi
 print_success "Composer dependencies installed"
 
 # Step 4: Setup environment
 print_step "Setting up environment..."
-ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    eval "$SSH_CMD" << SSHCMD
 cd "$DEPLOY_PATH"
 [ -f .env ] || cp .env.example .env
 php artisan key:generate --force
@@ -119,29 +189,53 @@ php artisan migrate --force
 php artisan cache:clear
 php artisan config:clear
 SSHCMD
+else
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+cd "$DEPLOY_PATH"
+[ -f .env ] || cp .env.example .env
+php artisan key:generate --force
+touch database/database.sqlite
+php artisan migrate --force
+php artisan cache:clear
+php artisan config:clear
+SSHCMD
+fi
 print_success "Environment configured"
 
 # Step 5: Set permissions
 print_step "Setting file permissions..."
-ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    eval "$SSH_CMD" << SSHCMD
 cd "$DEPLOY_PATH"
 chmod -R 755 storage bootstrap/cache
 chmod 644 database/database.sqlite
 chmod +x artisan
 SSHCMD
+else
+    echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD
+cd "$DEPLOY_PATH"
+chmod -R 755 storage bootstrap/cache
+chmod 644 database/database.sqlite
+chmod +x artisan
+SSHCMD
+fi
 print_success "Permissions set correctly"
 
 # Step 6: Verify deployment
 print_step "Verifying deployment..."
-LARAVEL_VERSION=$(ssh -p "$SSH_PORT" -o ConnectTimeout=10 "$ACCOUNT@$SSH_HOST" \
-    -o "PreferredAuthentications=password" \
-    -o "StrictHostKeyChecking=no" << SSHCMD 2>/dev/null
+if [ "$AUTH_METHOD" = "hardware" ]; then
+    LARAVEL_VERSION=$(eval "$SSH_CMD" << SSHCMD 2>/dev/null
 cd "$DEPLOY_PATH"
 php artisan --version
 SSHCMD
 )
+else
+    LARAVEL_VERSION=$(echo "$SSH_PASSWORD" | sshpass -p "$SSH_PASSWORD" $SSH_CMD << SSHCMD 2>/dev/null
+cd "$DEPLOY_PATH"
+php artisan --version
+SSHCMD
+)
+fi
 
 echo "Laravel version: $LARAVEL_VERSION"
 print_success "Deployment verified"
