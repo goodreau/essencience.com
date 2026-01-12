@@ -12,10 +12,6 @@ class ContentSecurityPolicy
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $nonce = base64_encode(random_bytes(16));
-
-        \View::share('cspNonce', $nonce);
-
         /** @var Response $response */
         $response = $next($request);
 
@@ -23,11 +19,11 @@ class ContentSecurityPolicy
             // Baseline policy
             "default-src 'self'",
 
-            // Scripts: self + Tailwind CDN + nonce for Flux and config inline scripts
-            "script-src 'self' https://cdn.tailwindcss.com 'nonce-{$nonce}'",
+            // Scripts: disallow external execution beyond self; no inline/nonce usage
+            "script-src 'self'",
 
-            // Styles: allow Bunny fonts CSS and inline styles (Tailwind CDN injects <style> tags without nonce)
-            "style-src 'self' https://fonts.bunny.net 'nonce-{$nonce}' 'unsafe-inline'",
+            // Styles: allow Bunny fonts CSS
+            "style-src 'self' https://fonts.bunny.net",
 
             // Fonts: Bunny + data URIs
             "font-src 'self' https://fonts.bunny.net data:",
@@ -35,7 +31,7 @@ class ContentSecurityPolicy
             // Images: self + data URIs
             "img-src 'self' data:",
 
-            // AJAX / Livewire requests
+            // AJAX / server requests
             "connect-src 'self'",
 
             // Disallow legacy embeddables
