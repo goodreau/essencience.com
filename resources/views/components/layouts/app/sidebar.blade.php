@@ -3,71 +3,51 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
+    <body class="layout-root">
+        <aside class="layout-sidebar">
+            <div class="layout-sidebar-header">
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" />
-                <!-- Removed sidebar.collapse toggle -->
-            </flux:sidebar.header>
+            </div>
 
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-            </flux:sidebar.nav>
+            <nav class="layout-sidebar-nav">
+                <h2 class="layout-sidebar-heading">{{ __('Platform') }}</h2>
+                <ul>
+                    <li><a href="{{ route('dashboard') }}" class="layout-sidebar-link">{{ __('Dashboard') }}</a></li>
+                </ul>
+            </nav>
 
-            <flux:spacer />
-
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
+            <div class="layout-sidebar-links">
+                <ul>
+                    <li><a href="https://github.com/laravel/livewire-starter-kit" target="_blank" class="layout-sidebar-link">{{ __('Repository') }}</a></li>
+                    <li><a href="https://laravel.com/docs/starter-kits#livewire" target="_blank" class="layout-sidebar-link">{{ __('Documentation') }}</a></li>
+                </ul>
+            </div>
 
             @auth
-                <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
-            @endauth
-        </flux:sidebar>
-
-
-        <!-- Mobile User Menu (static list) -->
-        @auth
-        <flux:header class="lg:hidden">
-            <!-- Removed sidebar.toggle -->
-            <flux:spacer />
-
-            <div class="p-2">
-                <div class="grid gap-2">
-                    <div class="flex items-center gap-2">
-                        <flux:avatar :name="auth()->user()->name" :initials="auth()->user()->initials()" />
-                        <div class="grid">
-                            <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
-                            <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
-                        </div>
-                    </div>
-                    <div class="flex gap-4">
-                        <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-1">
-                            {{ __('Settings') }}
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center gap-1">
-                                {{ __('Log Out') }}
-                            </button>
-                        </form>
-                    </div>
+                <div class="layout-desktop-user">
+                    <x-desktop-user-menu class="visible-lg" :name="auth()->user()->name" />
                 </div>
-            </div>
-        </flux:header>
-        @endauth
+            @endauth
+        </aside>
 
-        {{ $slot }}
+        <header class="layout-mobile-header">
+            @auth
+                <div class="layout-profile">
+                    <span class="layout-profile-name">{{ auth()->user()->name }}</span>
+                    <span class="layout-profile-email">{{ auth()->user()->email }}</span>
+                </div>
+                <div class="layout-profile-actions">
+                    <a href="{{ route('profile.edit') }}" class="layout-action-link">{{ __('Settings') }}</a>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="layout-action-link" data-test="logout-button">{{ __('Log Out') }}</button>
+                    </form>
+                </div>
+            @endauth
+        </header>
 
+        <main class="layout-content">
+            {{ $slot }}
+        </main>
     </body>
 </html>
