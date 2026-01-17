@@ -1,15 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Quintessential;
+use Illuminate\View\View;
 
 class QuintessentialController extends Controller
 {
     /**
      * Display a listing of the quintessentials.
      */
-    public function index()
+    public function index(): View
     {
         $quintessentials = Quintessential::orderBy('order_by')->get();
         
@@ -19,7 +22,7 @@ class QuintessentialController extends Controller
     /**
      * Display the specified quintessential.
      */
-    public function show(Quintessential $quintessential)
+    public function show(Quintessential $quintessential): View
     {
         // Get previous and next quintessentials for navigation
         $previous = Quintessential::where('number', $quintessential->number - 1)->first();
