@@ -9,7 +9,7 @@ Essencience.com will be a Laravel-based website for "The Philosopher King" Gene 
 
 ### Core Messaging Pillars
 1. **The Philosopher King Persona** – Gene K. Goodreau as steward of Quintessence (sovereign, visionary, civic responsibility)
-2. **The Ten Quintessentials** – Truth, Justice, Beauty, Love, Balance, Wisdom, Creativity, Harmonic Living, Unity, Transformation
+2. **The Quintessentials** – Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance
 3. **Theta (θ) as Origin** – Genesis, transformation, mathematical elegance; recurring emblem and metaphor
 4. **Essencience as Practice** – Science of self-expression, morphogenesis, reflective universe
 5. **Proclamation Format** – Public declarations, charters, invitations; treat launches as ceremonial events
@@ -21,7 +21,7 @@ Essencience.com will be a Laravel-based website for "The Philosopher King" Gene 
 - CTAs: Ritualistic imperatives ("Enter the Circle", "Claim Your Quintessential Path")
 
 ### Key Lexicon
-Quintessence, Essencia, θ, Morphogenesis, Harmonic Living, Transformation, Just Expression, Sovereign Freedom
+Quintessence, Essencia, θ (theta), Goodness, Truth, Connection, Justice, Expression, Balance, Morphogenesis, Just Expression, Sovereign Freedom
 
 ---
 
@@ -57,10 +57,14 @@ Quintessence, Essencia, θ, Morphogenesis, Harmonic Living, Transformation, Just
 - Format: Featured hero + archive/timeline
 - CTA: "Enter the Circle" (lead gen/signup)
 
-#### B. **The Ten Quintessentials** (Core Doctrine)
-- **Interactive Module**: Grid or carousel displaying all Ten
-  - Truth, Justice, Beauty, Love, Balance
-  - Wisdom, Creativity, Harmonic Living, Unity, Transformation
+#### B. **The Quintessentials** (Core Doctrine)
+- **Interactive Module**: Grid or carousel displaying all Quintessentials
+  - Goodness at theta (0)
+  - 1-truth
+  - 2-connection
+  - 3-justice
+  - 4-Expression
+  - 5-Balance
 - Each Quintessential links to:
   - Philosophical exploration (essay/scroll)
   - Scientific grounding (Quintessential Math reference)
@@ -83,7 +87,7 @@ Bridging philosophy and technical implementation:
   - Security principles
 
 #### D. **Rituals & Practices** (Experiential)
-- Quintessential Paths: Actionable programs tied to Ten Quintessentials
+- Quintessential Paths: Actionable programs tied to the Quintessentials
 - Guided practices, ceremonies, community gatherings
 - Member stories/testimonials
 - Downloadable guides, workbooks, mantras
@@ -122,7 +126,7 @@ Bridging philosophy and technical implementation:
 ### Landing Page (`/`)
 - **Hero**: Tagline ("A just expression of freedom") + ceremonial video or theta animation
 - **Call-to-Action**: "Enter the Circle" (signup/login)
-- **Ten Quintessentials Carousel**: Visual grid with brief definitions, links to each path
+- **Quintessentials Carousel**: Visual grid with brief definitions, links to each path (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance)
 - **Featured Proclamation**: Latest announcement
 - **Quick Links**: Science Hub, Rituals, Chronicle, Knowledge Base
 
@@ -211,7 +215,7 @@ Bridging philosophy and technical implementation:
 ## 6. Interactive Components (Livewire)
 
 ### Recommended Livewire Components
-1. **QuintessentialCarousel** – Homepage grid/carousel of Ten Quintessentials
+1. **QuintessentialCarousel** – Homepage grid/carousel of the Quintessentials (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance)
 2. **ProclamationFeed** – Live-updating featured announcements
 3. **RitualFinder** – Searchable, filterable ritual browser with real-time updates
 4. **KnowledgeSearcher** – Full-text search with autocomplete suggestions
@@ -233,7 +237,7 @@ Bridging philosophy and technical implementation:
 - Authentication system
 
 **Phase 2: Core Content (Weeks 3-4)**
-- Landing page with Quintessential carousel
+- Landing page with Quintessential carousel (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance)
 - Quintessential detail pages with essays and rituals
 - Basic blog/chronicle system
 
