@@ -1,7 +1,7 @@
 # Essencience.com Website - Content Analysis & Architecture Plan
 
 ## Overview
-Essencience.com will be a Laravel-based website for "The Philosopher King" Gene K. Goodreau, aligned with **The Age of Quintessence** brand and the **Ten Quintessentials** framework. It will serve as a digital portal combining philosophical proclamations, scientific/mathematical documentation, community practices, and sacred rites.
+Essencience.com will be a Laravel-based website for "The Philosopher King" Gene K. Goodreau, aligned with **The Age of Quintessence** brand and the **Quintessentials** framework (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance). It will serve as a digital portal combining philosophical proclamations, scientific/mathematical documentation, community practices, and sacred rites.
 
 ---
 
