@@ -70,7 +70,7 @@ php artisan make:model Quintessential -m
 ```
 
 **Quintessentials Table**
-- id, name (Truth, Justice, Beauty, etc.), slug
+- id, name (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance), slug
 - description, philosophy (long text)
 - icon_url, color_hex
 - order_by, created_at
@@ -392,14 +392,17 @@ php artisan make:seeder RitualSeeder
 php artisan make:seeder UserSeeder
 ```
 
-**QuintessentialSeeder** (seeds the Ten)
+**QuintessentialSeeder** (seeds the Quintessentials)
 ```php
 public function run()
 {
     $quintessentials = [
-        ['name' => 'Truth', 'description' => '...', 'order' => 1],
-        ['name' => 'Justice', 'description' => '...', 'order' => 2],
-        // ... all 10
+        ['name' => 'Goodness at theta', 'description' => '...', 'order' => 0],
+        ['name' => '1-truth', 'description' => '...', 'order' => 1],
+        ['name' => '2-connection', 'description' => '...', 'order' => 2],
+        ['name' => '3-justice', 'description' => '...', 'order' => 3],
+        ['name' => '4-Expression', 'description' => '...', 'order' => 4],
+        ['name' => '5-Balance', 'description' => '...', 'order' => 5],
     ];
     
     foreach ($quintessentials as $q) {
@@ -502,7 +505,7 @@ essencience.com/
 2. **Install Livewire & Tailwind**: `composer require livewire/livewire`, configure Tailwind
 3. **Set up .env**: Database, mail, app config
 4. **Create Database Schema**: Run migrations for Users, Quintessentials, Posts, etc.
-5. **Seed Initial Data**: Ten Quintessentials, Gene K. Goodreau user account
+5. **Seed Initial Data**: Quintessentials (Goodness at theta, 1-truth, 2-connection, 3-justice, 4-Expression, 5-Balance), Gene K. Goodreau user account
 6. **Build Home Page**: Hero section + Quintessential Carousel (Livewire)
 7. **Test locally**: `php artisan serve` + `npm run dev`
 8. **Deploy to server**: Upload to `/home/u693982071/public_html/`
