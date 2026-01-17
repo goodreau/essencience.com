@@ -59,7 +59,7 @@ class QuintessentialSeeder extends Seeder
                 'slug' => 'balance',
                 'description' => 'Equilibrium between opposing forces and harmonious proportion.',
                 'content' => 'Balance represents the dynamic equilibrium between opposing forces—the middle path that honors both stability and growth, tradition and innovation.',
-                'icon' => '⚖',
+                'icon' => '☯',
                 'color' => '#5A5A5A',
                 'order_by' => 5,
             ],

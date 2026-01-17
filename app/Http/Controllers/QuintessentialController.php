@@ -21,6 +21,10 @@ class QuintessentialController extends Controller
      */
     public function show(Quintessential $quintessential)
     {
-        return view('pages.quintessentials.show', compact('quintessential'));
+        // Get previous and next quintessentials for navigation
+        $previous = Quintessential::where('number', $quintessential->number - 1)->first();
+        $next = Quintessential::where('number', $quintessential->number + 1)->first();
+        
+        return view('pages.quintessentials.show', compact('quintessential', 'previous', 'next'));
     }
 }

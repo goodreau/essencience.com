@@ -37,36 +37,26 @@
 
         <!-- Navigation to previous/next quintessential -->
         <div class="mt-8 flex justify-between items-center">
-            @if ($quintessential->number > 1)
-                @php
-                    $previous = App\Models\Quintessential::where('number', $quintessential->number - 1)->first();
-                @endphp
-                @if ($previous)
-                    <a href="{{ route('quintessentials.show', $previous->slug) }}" 
-                       class="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        {{ $previous->number }}. {{ $previous->name }}
-                    </a>
-                @endif
+            @if ($previous)
+                <a href="{{ route('quintessentials.show', $previous->slug) }}" 
+                   class="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    {{ $previous->number }}. {{ $previous->name }}
+                </a>
             @else
                 <div></div>
             @endif
 
-            @if ($quintessential->number < 10)
-                @php
-                    $next = App\Models\Quintessential::where('number', $quintessential->number + 1)->first();
-                @endphp
-                @if ($next)
-                    <a href="{{ route('quintessentials.show', $next->slug) }}" 
-                       class="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                        {{ $next->number }}. {{ $next->name }}
-                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </a>
-                @endif
+            @if ($next)
+                <a href="{{ route('quintessentials.show', $next->slug) }}" 
+                   class="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                    {{ $next->number }}. {{ $next->name }}
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </a>
             @else
                 <div></div>
             @endif
